@@ -1,3 +1,6 @@
+//todo: Migrate Users Handler to Lambda
+// One architecture across the entire platform
+
 package users
 
 import (

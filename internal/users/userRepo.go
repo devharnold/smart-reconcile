@@ -1,3 +1,5 @@
+// Migrate this code to accomodate DynamoDB
+
 package users
 
 import (

@@ -17,6 +17,7 @@ func SetUpRouter(usersHandler *users.UserHandler, jwtSvc auth.JWTService) *gin.E
 	})
 
 	// Public User Routes
+
 	usersGroup := r.Group("/users")
 	{
 		usersGroup.POST("/signup", usersHandler.SignUp)
