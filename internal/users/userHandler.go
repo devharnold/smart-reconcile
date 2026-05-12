@@ -1,6 +1,3 @@
-//todo: Migrate Users Handler to Lambda
-// One architecture across the entire platform
-
 package users
 
 import (
@@ -9,94 +6,100 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserHandler struct {
+type Handler struct {
 	Service *UserService
 }
 
-func NewUserHandler(s *UserService) *UserHandler {
-	return &UserHandler{Service: s}
+func NewHandler(s *UserService) *Handler {
+	return &Handler{
+		Service: s,
+	}
 }
 
-type SignUpRequest struct {
-	FirstName   string `json:"first_name" binding:"required"`
-	LastName    string `json:"last_name" binding:"required"`
-	UserEmail   string `json:"user_email" binding:"required,email"`
-	PhoneNumber string `json:"phone_number" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-}
+func (h *Handler) SignUp(c *gin.Context) {
+	var body SignUpRequest
 
-type LoginRequest struct {
-	UserEmail string `json:"user_email" binding:"required,email"`
-	Password  string `json:"password" binding:"required"`
-}
-
-type SearchUserRequest struct {
-	UserEmail string `json:"user_email" binding:"required,email"`
-}
-
-func (h *UserHandler) SignUp(c *gin.Context) {
-	var req SignUpRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
 	user, err := h.Service.RegisterUser(
 		c.Request.Context(),
-		req.FirstName,
-		req.LastName,
-		req.UserEmail,
-		req.PhoneNumber,
-		req.Password,
+		body.FirstName,
+		body.LastName,
+		body.UserEmail,
+		body.PhoneNumber,
+		body.Password,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"id":           user.UserID,
-		"first_name":   user.FirstName,
-		"last_name":    user.LastName,
-		"email":        user.Email,
+	c.JSON(http.StatusCreated, gin.H {
+		"id": user.UserID,
+		"first_name": user.FirstName,
+		"last_name": user.LastName,
+		"email": user.Email,
 		"phone_number": user.PhoneNumber,
-		"token":        user.Token,
+		"token": user.Token,
 	})
 }
 
-func (h *UserHandler) Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (h *Handler) Login(c *gin.Context) {
+	var body LoginRequest
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
 	user, err := h.Service.LoginUser(
 		c.Request.Context(),
-		req.UserEmail,
-		req.Password,
+		body.UserEmail,
+		body.Password,
 	)
+
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"token": user.Token})
+	c.JSON(http.StatusOK, gin.H{
+		"token": user.Token,
+	})
 }
 
-func (h *UserHandler) SearchUser(c *gin.Context) {
-	var req SearchUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (h *Handler) SearchUser(c *gin.Context) {
+	var body SearchUserRequest
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	user, err := h.Service.GetUserByEmail(c.Request.Context(), req.UserEmail)
+	user, err := h.Service.GetUserByEmail(
+		c.Request.Context(),
+		body.UserEmail,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"id": user.UserID,
 		"first_name": user.FirstName,
