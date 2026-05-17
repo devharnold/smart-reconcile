@@ -6,95 +6,114 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/devharnold/smart-reconcile/internal/storage/postgres"
+	"github.com/shopspring/decimal"
 )
 
 const (
-	StatusMatched = "MATCHED"
+	StatusMatched      = "MATCHED"
 	StatusManualReview = "MANUAL_REVIEW"
-	StatusFailed = "FAILED"
+	StatusFailed       = "FAILED"
 )
 
 type Transaction struct {
-	ID uuid.UUID
+	ID         uuid.UUID
 	BusinessID uuid.UUID
-	Provider string
+	Provider   string
 	ExternalID string
-	Reference string
-	Amount float64
+	Reference  string
+	Amount   decimal.Decimal
 	Currency string
 	OccurredAt time.Time
-	Status string
+	Status     string
 }
 
 type Result struct {
-	ID            uuid.UUID
-	InternalTxID  uuid.UUID
-	ExternalTxID  uuid.UUID
-	Status        string
-	Variance      float64
-	Reason        string
-	ReconciledAt  time.Time
+	ID uuid.UUID
+	InternalTxID uuid.UUID
+	ExternalTxID uuid.UUID
+	Status   string
+	Variance decimal.Decimal
+	Reason   string
+	ReconciledAt time.Time
 }
 
 type Repository interface {
 	CreateResult(ctx context.Context, result *Result) error
+
+	UpdateTransactionStatus(ctx context.Context, transactionID uuid.UUID, status string) error
 }
 
 type Engine struct {
-	repo Repository
-	tolerance float64
+	repo      Repository
+	tolerance decimal.Decimal
 }
 
-func NewEngine(repo Repository, tolerance float64) *Engine {
+func NewEngine(repo Repository, tolerance decimal.Decimal) *Engine {
+
 	return &Engine{
-		repo: repo,
+		repo:      repo,
 		tolerance: tolerance,
 	}
 }
 
 func (e *Engine) Reconcile(ctx context.Context, internal Transaction, external Transaction) (*Result, error) {
+
 	if internal.Currency != external.Currency {
-		return nil, errors.New("Currency Mismatch")
+		return nil, errors.New("currency mismatch")
 	}
 
 	if internal.Reference == "" || external.Reference == "" {
-		return nil, errors.New("Missing References")
+		return nil, errors.New("missing transaction reference")
 	}
 
-	variance := internal.Amount - external.Amount
-	result := &Result {
-		ID: uuid.New(),
-		InternalTxID: internal.ID,
-		ExternalTxID: external.ID,
-		Variance: variance,
-		ReconciledAt: time.Now().UTC(),
-	}
+	variance := internal.Amount.Sub(external.Amount).Abs()
 
-	if MatchByReference(internal.Reference, external.Reference) && WithinTolerance(variance, e.tolerance) {
+	result := &Result{
+		ID:            uuid.New(),
+		InternalTxID:  internal.ID,
+		ExternalTxID:  external.ID,
+		Variance:      variance,
+		ReconciledAt:  time.Now().UTC(),
+	}
+	referencesMatch := MatchByReference(
+		internal.Reference,
+		external.Reference,
+	)
+
+	withinTolerance := variance.LessThanOrEqual(e.tolerance,)
+
+	if referencesMatch && withinTolerance {
 		result.Status = StatusMatched
 
-		if err := e.repo.UpdateTransactionStatus(
+		err := e.repo.UpdateTransactionStatus(
 			ctx,
 			internal.ID,
 			StatusMatched,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
+
 	} else {
 		result.Status = StatusManualReview
-		result.Reason = "Variance exceeded tolerance"
+		if !referencesMatch {
+			result.Reason = "transaction references do not match"
+		} else {
+			result.Reason = "variance exceeded tolerance"
+		}
 
-		if err := e.repo.UpdateTransactionStatus(
+		err := e.repo.UpdateTransactionStatus(
 			ctx,
 			internal.ID,
 			StatusManualReview,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	if err := e.repo.CreateResult(ctx, result); err != nil {
+	err := e.repo.CreateResult(ctx, result)
+	if err != nil {
 		return nil, err
 	}
 

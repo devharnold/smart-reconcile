@@ -1,6 +1,11 @@
 package reconciler
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+var specialChars = regexp.MustCompile(`[^A-Z0-9]`)
 
 func MatchByReference(internal string, external string,) bool {
 	internal = normalizeReference(internal)
@@ -13,5 +18,9 @@ func normalizeReference(value string) string {
 	value = strings.TrimSpace(value)
 	value = strings.ToUpper(value)
 
+	value = specialChars.ReplaceAllString(
+		value,
+		"",
+	)
 	return value
 }
