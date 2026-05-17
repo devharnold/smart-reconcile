@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/devharnold/smart-reconcile/internal/auth"
-	"github.com/devharnold/smart-reconcile/internal/router"
 	"github.com/devharnold/smart-reconcile/internal/storage"
 	"github.com/devharnold/smart-reconcile/internal/users"
 )
