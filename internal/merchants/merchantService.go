@@ -1,4 +1,6 @@
-package users
+// Change every user to use merchant
+
+package merchants
 
 import (
 	"context"

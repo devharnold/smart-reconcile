@@ -6,7 +6,7 @@ import (
 
 	"github.com/devharnold/smart-reconcile/internal/auth"
 	"github.com/devharnold/smart-reconcile/internal/storage"
-	"github.com/devharnold/smart-reconcile/internal/users"
+	"github.com/devharnold/smart-reconcile/internal/merchants"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	// Init services
 	jwtSvc := auth.NewJWTService()
 
-	userRepo := users.NewUsersRepository(db)
+	userRepo := users.NewMerchantsRepository(db)
 	userSvc := users.NewUserService(userRepo, jwtSvc)
 	userHandler := users.NewUserHandler(userSvc)
 
