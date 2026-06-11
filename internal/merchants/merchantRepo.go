@@ -1,6 +1,4 @@
-// Migrate this code to accomodate DynamoDB
-
-package users
+package merchants
 
 import (
 	"context"
@@ -10,21 +8,21 @@ import (
 )
 
 
-type UsersRepository struct {
+type MerchantsRepository struct {
 	db *storage.DB
 }
 
 // constructor
-func NewUsersRepository(db *storage.DB) *UsersRepository {
-	return &UsersRepository{db: db}
+func NewMerchantsRepository(db *storage.DB) *MerchantsRepository {
+	return &MerchantsRepository{db: db}
 }
 
-func (r *UsersRepository) RegisterUser(ctx context.Context, users *Users) (int64, error) {
+func (r *MerchantsRepository) RegisterMerchant(ctx context.Context, merchants *Merchants) (int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
-		INSERT INTO users (
+		INSERT INTO merchants (
 			first_name,
 			last_name,
 			email,
@@ -34,11 +32,11 @@ func (r *UsersRepository) RegisterUser(ctx context.Context, users *Users) (int64
 			updated_at
 		)
 		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-		RETURNING user_id
+		RETURNING merchant_id
 	`
 
-	var userID int64
-	var u Users
+	var merchantID int64
+	var u Merchants
 	err := r.db.Pool.QueryRow(
 		ctx,
 		query,
@@ -47,34 +45,34 @@ func (r *UsersRepository) RegisterUser(ctx context.Context, users *Users) (int64
 		u.Email,
 		u.PhoneNumber,
 		u.Password,
-	).Scan(&userID)
+	).Scan(&merchantID)
 
 	if err != nil {
 		return 0, err
 	}
 
-	return userID, nil
+	return merchantID, nil
 }
 
-func (r *UsersRepository) GetUserByEmail(ctx context.Context, email string) (*Users, error) {
+func (r *MerchantsRepository) GetMerchantByEmail(ctx context.Context, email string) (*Merchants, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
 		SELECT
-			user_id,
+			merchant_id,
 			first_name,
 			last_name,
 			email,
 			phone_number,
 			password
-		FROM users
+		FROM merchants
 		WHERE email = $1
 	`
 
-	var u Users
+	var u Merchants
 	err := r.db.Pool.QueryRow(ctx, query, email).Scan(
-		&u.UserID,
+		&u.MerchantID,
 		&u.FirstName,
 		&u.LastName,
 		&u.Email,
@@ -89,24 +87,24 @@ func (r *UsersRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 	return &u, nil
 }
 
-func (r *UsersRepository) GetByID(ctx context.Context, userID int64) (*Users, error) {
+func (r *MerchantsRepository) GetByID(ctx context.Context, merchantID int64) (*Merchants, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
 		SELECT
-			user_id,
+			merchant_id,
 			first_name,
 			last_name,
 			email,
 			phone_number
-		FROM users
-		WHERE user_id = $1
+		FROM merchants
+		WHERE merchant_id = $1
 	`
 
-	var u Users
-	err := r.db.Pool.QueryRow(ctx, query, userID).Scan(
-		&u.UserID,
+	var u Merchants
+	err := r.db.Pool.QueryRow(ctx, query, merchantID).Scan(
+		&u.MerchantID,
 		&u.FirstName,
 		&u.LastName,
 		&u.Email,
