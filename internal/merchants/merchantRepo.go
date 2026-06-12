@@ -7,24 +7,21 @@ import (
 	"github.com/devharnold/smart-reconcile/internal/storage"
 )
 
-
-type MerchantsRepository struct {
+type MerchantRepository struct {
 	db *storage.DB
 }
 
-// constructor
-func NewMerchantsRepository(db *storage.DB) *MerchantsRepository {
-	return &MerchantsRepository{db: db}
+func NewMerchantsRepository(db *storage.DB) *MerchantRepository {
+	return &MerchantRepository{db: db}
 }
 
-func (r *MerchantsRepository) RegisterMerchant(ctx context.Context, merchants *Merchants) (int64, error) {
+func (r *MerchantRepository) RegisterMerchant(ctx context.Context, merchants *Merchants) (int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
 		INSERT INTO merchants (
-			first_name,
-			last_name,
+			business_name,
 			email,
 			phone_number,
 			password,
@@ -32,37 +29,35 @@ func (r *MerchantsRepository) RegisterMerchant(ctx context.Context, merchants *M
 			updated_at
 		)
 		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-		RETURNING merchant_id
+		RETURNING user_id
 	`
 
-	var merchantID int64
+	var userID int64
 	var u Merchants
 	err := r.db.Pool.QueryRow(
 		ctx,
 		query,
-		u.FirstName,
-		u.LastName,
+		u.BusinessName,
 		u.Email,
 		u.PhoneNumber,
 		u.Password,
-	).Scan(&merchantID)
+	).Scan(&userID)
 
 	if err != nil {
 		return 0, err
 	}
 
-	return merchantID, nil
+	return userID, nil
 }
 
-func (r *MerchantsRepository) GetMerchantByEmail(ctx context.Context, email string) (*Merchants, error) {
+func (r *MerchantRepository) GetMerchantByEmail(ctx context.Context, email string) (*Merchants, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
 		SELECT
-			merchant_id,
-			first_name,
-			last_name,
+			user_id,
+			business_name,
 			email,
 			phone_number,
 			password
@@ -72,9 +67,8 @@ func (r *MerchantsRepository) GetMerchantByEmail(ctx context.Context, email stri
 
 	var u Merchants
 	err := r.db.Pool.QueryRow(ctx, query, email).Scan(
-		&u.MerchantID,
-		&u.FirstName,
-		&u.LastName,
+		&u.UserID,
+		&u.BusinessName,
 		&u.Email,
 		&u.PhoneNumber,
 		&u.Password,
@@ -87,26 +81,23 @@ func (r *MerchantsRepository) GetMerchantByEmail(ctx context.Context, email stri
 	return &u, nil
 }
 
-func (r *MerchantsRepository) GetByID(ctx context.Context, merchantID int64) (*Merchants, error) {
+func (r *MerchantRepository) GetByID(ctx context.Context, merchantID int64) (*Merchants, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	query := `
 		SELECT
-			merchant_id,
-			first_name,
-			last_name,
+			business_name,
 			email,
 			phone_number
 		FROM merchants
-		WHERE merchant_id = $1
+		WHERE user_id = $1
 	`
 
 	var u Merchants
 	err := r.db.Pool.QueryRow(ctx, query, merchantID).Scan(
-		&u.MerchantID,
-		&u.FirstName,
-		&u.LastName,
+		&u.UserID,
+		&u.BusinessName,
 		&u.Email,
 		&u.PhoneNumber,
 	)

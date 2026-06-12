@@ -11,21 +11,21 @@ import (
 	"github.com/devharnold/smart-reconcile/internal/auth"
 )
 
-type UserService struct {
-	Repo       *UsersRepository
+type MerchantService struct {
+	Repo       *MerchantRepository
 	jwtService auth.JWTService
 }
 
-func NewUserService(repo *UsersRepository, jwtService auth.JWTService) *UserService {
-	return &UserService{
+func NewMerchantService(repo *MerchantRepository, jwtService auth.JWTService) *MerchantService {
+	return &MerchantService{
 		Repo:       repo,
 		jwtService: jwtService,
 	}
 }
 
-func (s *UserService) RegisterUser(ctx context.Context, firstName, lastName, userEmail, phoneNumber, password string) (*Users, error) {
+func (s *MerchantService) RegisterMerchant(ctx context.Context, businessName, Email, phoneNumber, password string) (*Merchants, error) {
 
-	if firstName == "" || lastName == "" || userEmail == "" || password == "" {
+	if businessName == "" || Email == "" || password == "" {
 		return nil, errors.New("all fields are required")
 	}
 
@@ -34,63 +34,62 @@ func (s *UserService) RegisterUser(ctx context.Context, firstName, lastName, use
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	user := &Users{
-		FirstName:   firstName,
-		LastName:    lastName,
-		Email:       userEmail,
-		PhoneNumber: phoneNumber,
-		Password:    hashedPassword,
+	merchant := &Merchants{
+		BusinessName: businessName,
+		Email:        Email,
+		PhoneNumber:  phoneNumber,
+		Password:     hashedPassword,
 	}
 
-	id, err := s.Repo.RegisterUser(ctx, user)
+	id, err := s.Repo.RegisterMerchant(ctx, merchant)
 	if err != nil {
 		return nil, fmt.Errorf("register user: %w", err)
 	}
 
-	user.UserID = id
+	merchant.UserID = id
 
 	token, err := s.jwtService.GenerateToken(
-		fmt.Sprint(user.UserID),
-		user.Email,
+		fmt.Sprint(merchant.UserID),
+		merchant.Email,
 		"user",
 	)
 	if err != nil {
 		return nil, fmt.Errorf("generate token: %w", err)
 	}
 
-	user.Token = token
-	return user, nil
+	merchant.Token = token
+	return merchant, nil
 }
 
-func (s *UserService) LoginUser(ctx context.Context, email, password string) (*Users, error) {
+func (s *MerchantService) MerchantLogin(ctx context.Context, email, password string) (*Merchants, error) {
 	if email == "" || password == "" {
 		return nil, errors.New("email and password required")
 	}
 
-	user, err := s.Repo.GetUserByEmail(ctx, email)
+	merchant, err := s.Repo.GetMerchantByEmail(ctx, email)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 
-	if !auth.VerifyPassword(password, user.Password) {
+	if !auth.VerifyPassword(password, merchant.Password) {
 		return nil, errors.New("invalid credentials")
 	}
 
 	token, err := s.jwtService.GenerateToken(
-		fmt.Sprint(user.UserID),
-		user.Email,
+		fmt.Sprint(merchant.UserID),
+		merchant.Email,
 		"user",
 	)
 	if err != nil {
 		return nil, fmt.Errorf("generate token: %w", err)
 	}
 
-	user.Token = token
+	merchant.Token = token
 
-	log.Printf("login successful user_id=%d", user.UserID)
-	return user, nil
+	log.Printf("login successful user_id=%d", merchant.UserID)
+	return merchant, nil
 }
 
-func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*Users, error) {
-	return s.Repo.GetUserByEmail(ctx, email)
+func (s *MerchantService) GetUserByEmail(ctx context.Context, email string) (*Merchants, error) {
+	return s.Repo.GetMerchantByEmail(ctx, email)
 }

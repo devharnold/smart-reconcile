@@ -3,14 +3,15 @@ package merchants
 import (
 	"net/http"
 
+	middleware "github.com/devharnold/smart-reconcile/internal/authmiddleware"
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	Service *UserService
+	Service *MerchantService
 }
 
-func NewHandler(s *UserService) *Handler {
+func NewMerchantHandler(s *MerchantService) *Handler {
 	return &Handler{
 		Service: s,
 	}
@@ -26,11 +27,10 @@ func (h *Handler) SignUp(c *gin.Context) {
 		return
 	}
 
-	user, err := h.Service.RegisterUser(
+	merchant, err := h.Service.RegisterMerchant(
 		c.Request.Context(),
-		body.FirstName,
-		body.LastName,
-		body.UserEmail,
+		body.BusinessName,
+		body.Email,
 		body.PhoneNumber,
 		body.Password,
 	)
@@ -41,13 +41,12 @@ func (h *Handler) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H {
-		"id": user.UserID,
-		"first_name": user.FirstName,
-		"last_name": user.LastName,
-		"email": user.Email,
-		"phone_number": user.PhoneNumber,
-		"token": user.Token,
+	c.JSON(http.StatusCreated, gin.H{
+		"id":            merchant.UserID,
+		"business_name": merchant.BusinessName,
+		"email":         merchant.Email,
+		"phone_number":  merchant.PhoneNumber,
+		"token":         merchant.Token,
 	})
 }
 
@@ -61,9 +60,9 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := h.Service.LoginUser(
+	merchant, err := h.Service.MerchantLogin(
 		c.Request.Context(),
-		body.UserEmail,
+		body.Email,
 		body.Password,
 	)
 
@@ -74,11 +73,21 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"token": user.Token,
+		"token": merchant.Token,
 	})
 }
 
 func (h *Handler) SearchUser(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	role := middleware.GetRole(c)
+
+	if role != "merchant" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "access denied",
+		})
+		return
+	}
+
 	var body SearchUserRequest
 
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -88,11 +97,10 @@ func (h *Handler) SearchUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.Service.GetUserByEmail(
+	merchant, err := h.Service.GetUserByEmail(
 		c.Request.Context(),
-		body.UserEmail,
+		body.Email,
 	)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -101,9 +109,9 @@ func (h *Handler) SearchUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id": user.UserID,
-		"first_name": user.FirstName,
-		"last_name": user.LastName,
-		"email": user.Email,
+		"requested_by": userID,
+		"id":           merchant.UserID,
+		"first_name":   merchant.BusinessName,
+		"email":        merchant.Email,
 	})
 }
