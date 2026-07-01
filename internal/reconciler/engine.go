@@ -21,19 +21,19 @@ type Transaction struct {
 	Provider   string
 	ExternalID string
 	Reference  string
-	Amount   decimal.Decimal
-	Currency string
+	Amount     decimal.Decimal
+	Currency   string
 	OccurredAt time.Time
 	Status     string
 }
 
 type Result struct {
-	ID uuid.UUID
+	ID           uuid.UUID
 	InternalTxID uuid.UUID
 	ExternalTxID uuid.UUID
-	Status   string
-	Variance decimal.Decimal
-	Reason   string
+	Status       string
+	Variance     decimal.Decimal
+	Reason       string
 	ReconciledAt time.Time
 }
 
@@ -69,18 +69,18 @@ func (e *Engine) Reconcile(ctx context.Context, internal Transaction, external T
 	variance := internal.Amount.Sub(external.Amount).Abs()
 
 	result := &Result{
-		ID:            uuid.New(),
-		InternalTxID:  internal.ID,
-		ExternalTxID:  external.ID,
-		Variance:      variance,
-		ReconciledAt:  time.Now().UTC(),
+		ID:           uuid.New(),
+		InternalTxID: internal.ID,
+		ExternalTxID: external.ID,
+		Variance:     variance,
+		ReconciledAt: time.Now().UTC(),
 	}
 	referencesMatch := MatchByReference(
 		internal.Reference,
 		external.Reference,
 	)
 
-	withinTolerance := variance.LessThanOrEqual(e.tolerance,)
+	withinTolerance := variance.LessThanOrEqual(e.tolerance)
 
 	if referencesMatch && withinTolerance {
 		result.Status = StatusMatched
@@ -94,10 +94,21 @@ func (e *Engine) Reconcile(ctx context.Context, internal Transaction, external T
 			return nil, err
 		}
 
+	} else if referencesMatch && withinTolerance {
+		result.Status = StatusFailed
+
+		err := e.repo.UpdateTransactionStatus(
+			ctx,
+			internal.ID,
+			StatusFailed,
+		)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		result.Status = StatusManualReview
 		if !referencesMatch {
-			result.Reason = "transaction references do not match"
+			result.Reason = "Failed Reconciliation Process"
 		} else {
 			result.Reason = "variance exceeded tolerance"
 		}

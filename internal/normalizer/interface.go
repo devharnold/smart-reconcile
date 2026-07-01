@@ -1,20 +1,7 @@
 package normalizer
 
-import (
-	"time"
-
-	"github.com/shopspring/decimal"
-)
-
-type NormalizedTransaction struct {
-	ID string
-	Provider string
-	Amount decimal.Decimal
-	Currency string
-	Reference string
-	OccurredAt time.Time
-}
+import "github.com/devharnold/smart-reconcile/internal/transactions"
 
 type TransactionNormalizer interface {
-	Normalize(payload []byte) (*NormalizedTransaction, error)
+	Normalize(payload []byte) (*transactions.NormalizedTransaction, error)
 }

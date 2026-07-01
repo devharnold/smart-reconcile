@@ -12,9 +12,9 @@ const stages = [
     desc: 'Each provider is integrated independently behind a shared interface. Provider-specific auth, pagination, and payload quirks live here and nowhere else.',
   },
   {
-    title: 'Polling & sync engine',
-    tag: 'Cloud Scheduler → Pub/Sub → sync-worker',
-    desc: 'Cloud Scheduler triggers sync jobs on a fixed cadence. Each job is published to Pub/Sub and picked up by a sync-worker, decoupling the act of fetching from the act of processing.',
+    title: 'Polling & scheduler engine',
+    tag: 'Cloud Scheduler → Pub/Sub → scheduler-worker',
+    desc: 'Cloud Scheduler triggers scheduler jobs on a fixed cadence. Each job is published to Pub/Sub and picked up by a scheduler-worker, decoupling the act of fetching from the act of processing.',
   },
   {
     title: 'Raw transaction storage',

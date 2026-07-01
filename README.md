@@ -465,7 +465,7 @@ go mod download
 go run ./cmd/api
 
 # In separate terminals, run the workers
-go run ./cmd/sync-worker
+go run ./cmd/scheduler-worker
 go run ./cmd/normalize-worker
 go run ./cmd/reconcile-worker
 ```

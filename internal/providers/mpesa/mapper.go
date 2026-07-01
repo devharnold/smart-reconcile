@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/devharnold/smart-reconcile/internal/normalizer"
+	"github.com/devharnold/smart-reconcile/internal/transactions"
 )
 
 type Mapper struct{}
 
-func (m Mapper) Normalize(payload []byte) (*normalizer.NormalizedTransaction, error) {
+func (m Mapper) Normalize(payload []byte) (*transactions.NormalizedTransaction, error) {
 
 	var p TransactionPayload
 
@@ -23,7 +23,7 @@ func (m Mapper) Normalize(payload []byte) (*normalizer.NormalizedTransaction, er
 		return nil, err
 	}
 
-	return &normalizer.NormalizedTransaction{
+	return &transactions.NormalizedTransaction{
 		ID:         p.TransactionID,
 		Provider:   "mpesa",
 		Amount:     p.Amount,
