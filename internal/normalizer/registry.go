@@ -1,4 +1,3 @@
-// Normalization Registry
 package normalizer
 
 import (
