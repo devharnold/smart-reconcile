@@ -1,0 +1,5 @@
+## M-Pesa Provider Refactoring
+
+The main change was separating the M-Pesa integration into distinct responsibilities. The `Client` was updated to focus solely on communicating with the M-Pesa API and returning raw `TransactionPayload` objects defined in `payload.go`, which represent the provider's JSON response. The `Mapper` in `normalize.go` is responsible for converting these provider-specific payloads into the application's common `NormalizedTransaction` model, while `fetch.go` (or `service.go`) orchestrates the process by fetching the raw transactions, normalizing them, and returning the final result.
+
+This separation of concerns makes the codebase easier to maintain, test, and extend. As a result, additional payment providers such as Stripe, PayPal, and bank integrations can be added by implementing the same workflow without affecting the application's core business logic.

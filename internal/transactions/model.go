@@ -14,3 +14,12 @@ type NormalizedTransaction struct {
 	Reference  string
 	OccurredAt time.Time
 }
+
+type Transaction struct {
+	ID          string
+	Amount      float64
+	Currency    string
+	Reference   string
+	Description string
+	Timestamp   string
+}
