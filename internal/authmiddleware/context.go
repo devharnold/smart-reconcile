@@ -1,15 +1,38 @@
-package middleware
+package authmiddleware
 
-import "github.com/gin-gonic/gin"
+import "context"
 
-func GetUserID(c *gin.Context) string {
-	return c.MustGet("user_id").(string)
+// contextKey is an unexported type to prevent collisions with other packages.
+
+const (
+	UserIDKey contextKey = "user_id"
+	EmailKey  contextKey = "email"
+	RoleKey   contextKey = "role"
+)
+
+// GetUserID retrieves the authenticated user's ID from the request context.
+func GetUserID(ctx context.Context) string {
+	userID, ok := ctx.Value(UserIDKey).(string)
+	if !ok {
+		return ""
+	}
+	return userID
 }
 
-func GetEmail(c *gin.Context) string {
-	return c.MustGet("email").(string)
+// GetEmail retrieves the authenticated user's email from the request context.
+func GetEmail(ctx context.Context) string {
+	email, ok := ctx.Value(EmailKey).(string)
+	if !ok {
+		return ""
+	}
+	return email
 }
 
-func GetRole(c *gin.Context) string {
-	return c.MustGet("role").(string)
+// GetRole retrieves the authenticated user's role from the request context.
+func GetRole(ctx context.Context) string {
+	role, ok := ctx.Value(RoleKey).(string)
+	if !ok {
+		return ""
+	}
+	return role
 }
